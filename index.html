@@ -83,6 +83,8 @@ button:focus-visible{outline:2px solid var(--tone);outline-offset:3px}
 .clock.warn svg{animation:pulse 1s ease-in-out infinite}
 @keyframes pulse{50%{opacity:.55}}
 .meta{grid-area:meta;display:flex;flex-direction:column;align-items:center;gap:12px}
+.info,.bar,.btext{display:flex;flex-direction:column;align-items:center;gap:12px}
+.btext{gap:4px}
 .counts{font-size:clamp(20px,5.2vw,30px);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);text-align:center;font-variant-numeric:tabular-nums}
 .counts em{font-style:normal}
 .counts span{color:var(--muted);margin:0 .4em}
@@ -104,16 +106,21 @@ button:focus-visible{outline:2px solid var(--tone);outline-offset:3px}
 #run.paused .phase::after{content:" · paused";color:var(--muted);text-shadow:none}
 
 @media (orientation:landscape) and (max-height:600px){
-  .grid{grid-template-columns:minmax(0,1fr) minmax(210px,30%);grid-template-rows:auto minmax(0,1fr);grid-template-areas:"clock phase" "clock meta";column-gap:24px;padding-block:12px}
-  .phase{text-align:left;align-self:end;font-size:clamp(26px,4.5vw,40px)}
-  .meta{align-items:flex-start;justify-content:flex-start;gap:10px}
-  .counts{text-align:left;font-size:clamp(18px,3.4vw,26px)}
-  .counts span{display:none}
-  .counts em{display:block;font-style:normal}
-  .dots{justify-content:flex-start}
-  .controls{justify-content:flex-start;gap:14px}
-  .ctl{width:62px;height:62px}
-  .ctl.small{width:50px;height:50px}
+  /* Landscape: digits span the full width; label + counts on a thin top strip, next + controls on a thin bottom strip */
+  .grid{grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:"phase info" "clock clock" "bar bar";gap:4px 16px;padding-block:8px 6px}
+  .meta{display:contents}
+  .phase{text-align:left;align-self:center;font-size:clamp(22px,3.6vw,32px)}
+  .info{grid-area:info;flex-direction:row;align-items:center;gap:16px}
+  .counts{font-size:clamp(17px,2.8vw,22px)}
+  .dots{flex-wrap:nowrap;gap:7px}
+  .dots i{width:9px;height:9px}
+  .bar{grid-area:bar;flex-direction:row;justify-content:space-between;align-items:center}
+  .btext{align-items:flex-start}
+  .controls{gap:14px;margin-top:0}
+  .ctl{width:54px;height:54px}
+  .ctl.small{width:46px;height:46px}
+  .ctl svg{width:22px;height:22px}
+  .wide{height:50px}
   .tab{padding:10px 4px 9px}
   .row{min-height:64px;padding:8px 0}
   .startbar{padding:8px 0 10px}
@@ -148,11 +155,11 @@ button:focus-visible{outline:2px solid var(--tone);outline-offset:3px}
     <div class="phase" id="phase">Work</div>
     <div class="clock" id="clock"></div>
     <div class="meta">
-      <div class="counts" id="counts"></div>
-      <div class="dots" id="dots"></div>
-      <div class="next" id="next"></div>
-      <div class="controls" id="controls"></div>
-      <div class="hint" id="hint"></div>
+      <div class="info"><div class="counts" id="counts"></div><div class="dots" id="dots"></div></div>
+      <div class="bar">
+        <div class="btext"><div class="next" id="next"></div><div class="hint" id="hint"></div></div>
+        <div class="controls" id="controls"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -210,8 +217,8 @@ const MODES = {
   intervals:{fields:[
     {key:'work',label:'Work',type:'time',min:5,max:3600,def:40,tone:'amber'},
     {key:'rest',label:'Rest',type:'time',min:0,max:3600,def:20,tone:'cyan'},
-    {key:'rounds',label:'Rounds',type:'count',min:1,max:99,def:8,tone:'amber'},
-    {key:'sets',label:'Sets',type:'count',min:1,max:20,def:3,tone:'amber'},
+    {key:'rounds',label:'Rounds',type:'count',min:1,max:99,def:1,tone:'amber'},
+    {key:'sets',label:'Sets',type:'count',min:1,max:20,def:1,tone:'amber'},
     {key:'setRest',label:'Rest between sets',type:'time',min:0,max:3600,def:90,tone:'cyan'},
     {key:'prep',label:'Get ready',type:'time',min:0,max:60,def:10,tone:'ink'},
   ], note:'Hold + or − to change values faster. Set rest to 0:00 to go straight into the next round.'},
@@ -225,7 +232,7 @@ const MODES = {
     presets:[30,45,60,90,120,180],
     note:'For rest between strength sets. Tap a preset, start, and tap Rest again when your next set is done.'},
 };
-const STORE='scoreboard-timer.v1';
+const STORE='scoreboard-timer.v2';
 let state = {mode:'intervals', cfg:{}};
 for(const [m,d] of Object.entries(MODES)){ state.cfg[m]={}; d.fields.forEach(f=>state.cfg[m][f.key]=f.def); }
 try{ const s=JSON.parse(localStorage.getItem(STORE)||'null');
